@@ -30,7 +30,7 @@ st.markdown(
       }
       [data-testid="stVerticalBlock"] { gap: 0 !important; }
       [data-testid="stElementContainer"] { margin: 0 !important; }
-      iframe { display: block; border: 0 !important; width: 100% !important; }
+      iframe { display: block; border: 0 !important; width: 100% !important; height: 100vh !important; }
     </style>
     """,
     unsafe_allow_html=True,
