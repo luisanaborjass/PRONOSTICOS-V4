@@ -29,13 +29,13 @@
   .is-hidden{display:none !important;}
 
   /* ---------- Layout ---------- */
-  .app{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh;}
+  .app{display:grid;grid-template-columns:300px minmax(0,1fr);height:100vh;overflow:hidden;}
   .sidebar{background:var(--g100);border-right:1px solid var(--g200);padding:0 22px 28px;position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;}
-  .main{padding:34px 40px 64px;width:100%;}
+  .main{padding:34px 40px 64px;width:100%;height:100vh;overflow-y:auto;min-width:0;}
   @media (max-width:880px){
-    .app{grid-template-columns:1fr;}
+    .app{grid-template-columns:1fr;height:auto;overflow:visible;}
     .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--g200);}
-    .main{padding:26px 18px 48px;}
+    .main{padding:26px 18px 48px;height:auto;overflow-y:visible;}
   }
 
   /* ---------- Sidebar ---------- */
