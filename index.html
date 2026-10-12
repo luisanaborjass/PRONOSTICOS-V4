@@ -29,13 +29,13 @@
   .is-hidden{display:none !important;}
 
   /* ---------- Layout ---------- */
-  .app{display:grid;grid-template-columns:300px minmax(0,1fr);height:100vh;overflow:hidden;}
+  .app{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh;}
   .sidebar{background:var(--g100);border-right:1px solid var(--g200);padding:0 22px 28px;position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;}
-  .main{padding:34px 40px 64px;width:100%;height:100vh;overflow-y:auto;min-width:0;}
+  .main{padding:34px 40px 64px;width:100%;}
   @media (max-width:880px){
-    .app{grid-template-columns:1fr;height:auto;overflow:visible;}
+    .app{grid-template-columns:1fr;}
     .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--g200);}
-    .main{padding:26px 18px 48px;height:auto;overflow-y:visible;}
+    .main{padding:26px 18px 48px;}
   }
 
   /* ---------- Sidebar ---------- */
@@ -86,6 +86,10 @@
   .select-wrap label{font-size:13px;color:var(--g600);}
   select{appearance:none;-webkit-appearance:none;font-size:13.5px;border:1px solid var(--g300);border-radius:10px;padding:8px 34px 8px 12px;background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235A6672' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;min-width:230px;max-width:360px;cursor:pointer;}
   select:disabled{opacity:.55;cursor:not-allowed;}
+  .code-input{font-size:13.5px;border:1px solid var(--g300);border-radius:10px;padding:8px 12px;background:var(--white);width:170px;}
+  .code-input:disabled{opacity:.55;cursor:not-allowed;}
+  .code-input:focus-visible{outline:2px solid var(--c600);outline-offset:2px;}
+  .code-input.no-match{border-color:var(--err);}
   select:focus-visible,button:focus-visible{outline:2px solid var(--c600);outline-offset:2px;}
 
   .chart-panel{padding:18px 18px 12px;}
@@ -144,14 +148,14 @@
       <span class="brand-signature">By LB</span>
     </div>
 
-    <div class="slot" id="slot-actual" data-slot="actual">
+    <div class="slot" id="slot-pronosticos" data-slot="pronosticos">
       <span class="tag req">Obligatorio</span>
-      <p class="slot-label">Carga el pronóstico actual aquí</p>
-      <input id="input-actual" class="sr-only slot-input" type="file" accept=".xlsx,.xls,.csv" data-slot="actual">
-      <label class="dropzone" for="input-actual">
+      <p class="slot-label">Carga el archivo de pronósticos aquí</p>
+      <input id="input-pronosticos" class="sr-only slot-input" type="file" accept=".xlsx,.xls" data-slot="pronosticos">
+      <label class="dropzone" for="input-pronosticos">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
         <span class="dz-main">Arrastra el archivo o <u>elígelo</u></span>
-        <span class="dz-sub">.xlsx · .xls · .csv</span>
+        <span class="dz-sub">1ª pestaña: actual · 2ª pestaña: sugerido</span>
       </label>
       <div class="slot-status" aria-live="polite"></div>
     </div>
@@ -168,27 +172,15 @@
       <div class="slot-status" aria-live="polite"></div>
     </div>
 
-    <div class="slot" id="slot-sugerido" data-slot="sugerido">
-      <span class="tag">Opcional</span>
-      <p class="slot-label">Carga el sugerido adicional aquí</p>
-      <input id="input-sugerido" class="sr-only slot-input" type="file" accept=".xlsx,.xls,.csv" data-slot="sugerido">
-      <label class="dropzone" for="input-sugerido">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-        <span class="dz-main">Arrastra el archivo o <u>elígelo</u></span>
-        <span class="dz-sub">.xlsx · .xls · .csv</span>
-      </label>
-      <div class="slot-status" aria-live="polite"></div>
-    </div>
-
     <div class="side-note">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E7490" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <span>El análisis se genera solo cuando cargas el pronóstico actual y la venta histórica. Si agregas el sugerido después, se recalcula.</span>
+      <span>El análisis se genera cuando cargas el archivo de pronósticos y la venta histórica. El pronóstico sugerido se toma de la segunda pestaña del archivo de pronósticos.</span>
     </div>
 
     <details class="help">
       <summary>¿Qué formato debe tener cada archivo?</summary>
       <ul>
-        <li><b>Pronóstico actual y sugerido:</b> un renglón por producto (columna <span class="mono">Item code</span>) y un mes por columna, por ejemplo <span class="mono">Sep 2026</span>.</li>
+        <li><b>Pronósticos:</b> un solo Excel. La <b>primera pestaña</b> es el pronóstico actual y la <b>segunda pestaña</b> el pronóstico sugerido. En ambas, un renglón por producto (columna <span class="mono">Item code</span>) y un mes por columna, por ejemplo <span class="mono">Sep 2026</span>.</li>
         <li><b>Venta histórica:</b> un renglón por producto y mes, con las columnas <span class="mono">Articulo</span>, el mes (por ejemplo <span class="mono">10-2025</span>) y <span class="mono">Venta Neta</span>.</li>
       </ul>
     </details>
@@ -200,7 +192,7 @@
   <main class="main">
     <header>
       <h1>Calculador de pronósticos</h1>
-      <p class="lead">Sube el histórico de ventas y los pronósticos por producto. La herramienta mide qué tan lejos estuvo cada modelo y entrega una versión corregida para cada mes futuro.</p>
+      <p class="lead">Sube el histórico de ventas y los pronósticos por producto. La herramienta mide qué tan lejos estuvo cada modelo y entrega una versión corregida desde el mes actual en adelante.</p>
     </header>
 
     <!-- Chart -->
@@ -214,6 +206,11 @@
           <div class="select-wrap">
             <label for="brand-select">Marca</label>
             <select id="brand-select" disabled><option value="ALL">Todas las marcas</option></select>
+          </div>
+          <div class="select-wrap">
+            <label for="code-filter">Código</label>
+            <input type="search" id="code-filter" class="code-input mono" list="code-list" placeholder="Buscar código" autocomplete="off" disabled>
+            <datalist id="code-list"></datalist>
           </div>
           <div class="select-wrap">
             <label for="product-select">Ver</label>
@@ -328,13 +325,15 @@
   let metrics = null;
   let selectedProduct = 'ALL';
   let selectedBrand = 'ALL';
+  let codeQuery = '';   // texto del filtro de código de artículo ('' = sin filtro)
   let brandList = [];
   let chart = null;
-  let deliveryStartIdx = -Infinity;   // primer mes que se entrega (el mes siguiente al actual)
-  let omittedMonthLabel = '';         // mes actual, que se omite de la entrega
+  let deliveryStartIdx = -Infinity;   // primer mes que se entrega (el mes actual)
+  let currentMonthLabel = '';         // etiqueta del mes actual (primer mes de la entrega)
 
   // ================= DOM =================
   const $ = id => document.getElementById(id);
+  const codeFilter = $('code-filter'), codeList = $('code-list');
   const productSelect = $('product-select'), brandSelect = $('brand-select'), exportBtn = $('export-btn'), chartEmpty = $('chart-empty');
   const chartCaption = $('chart-caption'), indCaption = $('ind-caption'), indNote = $('ind-note');
   const tableWrap = $('table-wrap'), tableEmpty = $('table-empty'), tableHead = $('table-head'), tableBody = $('table-body'), tableCaption = $('table-caption');
@@ -498,14 +497,36 @@
         if (typeof XLSX === 'undefined') throw new Error('XLSX_NOT_LOADED');
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, {type:'array', cellDates:true});
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const grid = XLSX.utils.sheet_to_json(sheet, {header:1, defval:null, raw:true});
-        const parsed = key === 'historico' ? parseHistorico(grid) : parseForecastWide(grid);
+        const gridOf = i => XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[i]], {header:1, defval:null, raw:true});
+        let parsed, extraMeta = '';
+        if (key === 'pronosticos'){
+          // Un solo archivo: 1ª pestaña = pronóstico actual, 2ª pestaña = pronóstico sugerido (opcional).
+          parsed = parseForecastWide(gridOf(0));
+          raw.sugerido = null;
+          if (!parsed.error){
+            if (wb.SheetNames.length < 2){
+              extraMeta = '<div class="meta">Sin segunda pestaña: se analiza sin pronóstico sugerido.</div>';
+            } else {
+              const sug = parseForecastWide(gridOf(1));
+              if (sug.error){
+                extraMeta = '<div class="meta"><span class="bad">Pestaña «' + escapeHtml(wb.SheetNames[1]) + '» (sugerido): ' + escapeHtml(sug.error) + '</span></div>';
+              } else {
+                raw.sugerido = sug;
+                const nS = new Set(sug.rows.map(r => r.code)).size;
+                extraMeta = '<div class="meta">Actual: «' + escapeHtml(wb.SheetNames[0]) + '» · Sugerido: «' + escapeHtml(wb.SheetNames[1]) + '» (' + nS + (nS === 1 ? ' producto' : ' productos') + ')</div>';
+              }
+            }
+          }
+        } else {
+          parsed = parseHistorico(gridOf(0));
+        }
+        const target = key === 'pronosticos' ? 'actual' : key;
         if (parsed.error){
-          raw[key] = null;
+          raw[target] = null;
+          if (key === 'pronosticos') raw.sugerido = null;
           setSlotStatus(slot, '<span class="bad">' + escapeHtml(parsed.error) + '</span>', false);
         } else {
-          raw[key] = parsed;
+          raw[target] = parsed;
           const nProd = new Set(parsed.rows.map(r => r.code)).size;
           const nMonths = new Set(parsed.rows.map(r => r.periodKey)).size;
           setSlotStatus(slot,
@@ -513,11 +534,11 @@
             '<span class="fname" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</span>' +
             '<button type="button" class="slot-clear">Quitar</button></div>' +
             '<div class="meta">' + nProd + (nProd === 1 ? ' producto' : ' productos') + ' · ' + nMonths + ' meses' +
-            (parsed.skippedZeroMonths ? ' · ' + parsed.skippedZeroMonths + (parsed.skippedZeroMonths === 1 ? ' mes omitido (todo en cero)' : ' meses omitidos (todo en cero)') : '') + '</div>', true);
+            (parsed.skippedZeroMonths ? ' · ' + parsed.skippedZeroMonths + (parsed.skippedZeroMonths === 1 ? ' mes omitido (todo en cero)' : ' meses omitidos (todo en cero)') : '') + '</div>' + extraMeta, true);
         }
       } catch(err){
         console.error(err);
-        raw[key] = null;
+        clearRaw(key);
         const msg = (err && err.message === 'XLSX_NOT_LOADED')
           ? 'No se cargó la librería para leer Excel. Revisa tu conexión a internet y recarga la página.'
           : 'No se pudo leer este archivo.';
@@ -526,15 +547,20 @@
       refresh();
     };
     reader.onerror = function(){
-      raw[key] = null;
+      clearRaw(key);
       setSlotStatus(slot, '<span class="bad">Error al leer el archivo.</span>', false);
       refresh();
     };
     reader.readAsArrayBuffer(file);
   }
 
+  // El slot de pronósticos alimenta dos datos: el actual (1ª pestaña) y el sugerido (2ª pestaña).
+  function clearRaw(key){
+    if (key === 'pronosticos'){ raw.actual = null; raw.sugerido = null; }
+    else raw[key] = null;
+  }
   function clearSlot(key, slot){
-    raw[key] = null;
+    clearRaw(key);
     slot.querySelector('.slot-input').value = '';
     setSlotStatus(slot, '', false);
     refresh();
@@ -823,11 +849,11 @@
     const calMonthOf = key => ((idxByKey[key] % 12) + 12) % 12;
 
     // Mes actual = el más reciente entre el mes del calendario y el último mes con ventas.
-    // La entrega omite ese mes y empieza en el siguiente.
+    // La entrega (tabla e Excel) incluye ese mes y los siguientes.
     const today = new Date();
     const currentIdx = Math.max(monthIndex(today.getFullYear(), today.getMonth() + 1), lastSalesIdx);
-    deliveryStartIdx = currentIdx + 1;
-    omittedMonthLabel = labelFromIdx(currentIdx);
+    deliveryStartIdx = currentIdx;
+    currentMonthLabel = labelFromIdx(currentIdx);
 
     // Estacionalidad de las ventas históricas del conjunto de productos, usando solo ventas
     // anteriores al mes que se pronostica (así el mes de comparación no "ve" su propia venta)
@@ -1141,9 +1167,18 @@
   // ================= Views =================
   // Códigos a los que se restringe la vista "Todos los productos (suma)" cuando hay una marca
   // seleccionada en el filtro de Marca; null = sin restricción (todas las marcas).
+  // También respeta el filtro de Código: con texto escrito, solo entran los códigos que lo contienen.
+  function brandProducts(){
+    return selectedBrand === 'ALL' ? productList : productList.filter(p => p.marca === selectedBrand);
+  }
+  function visibleProducts(){
+    const q = codeQuery.toLowerCase();
+    const base = brandProducts();
+    return q ? base.filter(p => String(p.code).toLowerCase().includes(q)) : base;
+  }
   function brandFilteredCodes(){
-    if (selectedBrand === 'ALL') return null;
-    return new Set(productList.filter(p => p.marca === selectedBrand).map(p => p.code));
+    if (selectedBrand === 'ALL' && !codeQuery) return null;
+    return new Set(visibleProducts().map(p => p.code));
   }
   function rowInScope(r){
     if (selectedProduct !== 'ALL') return r.code === selectedProduct;
@@ -1175,7 +1210,7 @@
     return allRows.filter(r => r.code === selectedProduct).sort((a,b) => a.periodDate - b.periodDate);
   }
   function currentMetrics(){
-    if (selectedProduct === 'ALL' && selectedBrand === 'ALL') return metrics;
+    if (selectedProduct === 'ALL' && selectedBrand === 'ALL' && !codeQuery) return metrics;
     const rowsP = allRows.filter(rowInScope);
     const pA = rowsP.filter(r => r.ventas !== null && r.pactual !== null);
     const pS = hasSuggested ? rowsP.filter(r => r.ventas !== null && r.psugerido !== null) : [];
@@ -1188,7 +1223,9 @@
   }
   function selectionLabel(){
     if (selectedProduct === 'ALL'){
-      return selectedBrand === 'ALL' ? 'todos los productos (suma)' : 'todos los productos de la marca ' + selectedBrand + ' (suma)';
+      const brandTxt = selectedBrand === 'ALL' ? '' : ' de la marca ' + selectedBrand;
+      return codeQuery ? 'los productos' + brandTxt + ' con código que contiene «' + codeQuery + '» (suma)'
+                       : (selectedBrand === 'ALL' ? 'todos los productos (suma)' : 'todos los productos' + brandTxt + ' (suma)');
     }
     const p = productList.find(x => x.code === selectedProduct);
     return p ? p.label : selectedProduct;
@@ -1203,6 +1240,7 @@
     brandSelect.disabled = true;
     productSelect.innerHTML = '<option value="ALL">Todos los productos (suma)</option>';
     productSelect.disabled = true;
+    codeQuery = ''; codeFilter.value = ''; codeFilter.disabled = true; codeFilter.classList.remove('no-match'); codeList.innerHTML = '';
     indCaption.textContent = 'Error, desviación y sesgo de cada pronóstico frente a la venta real.';
     renderIndicators(null);
     tableWrap.classList.add('is-hidden');
@@ -1218,15 +1256,42 @@
     brandSelect.innerHTML = '<option value="ALL">Todas las marcas</option>' +
       brandList.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
     brandSelect.value = selectedBrand;
-    const visibleProducts = selectedBrand === 'ALL' ? productList : productList.filter(p => p.marca === selectedBrand);
-    productSelect.disabled = false;
-    productSelect.innerHTML = `<option value="ALL">Todos los productos${selectedBrand === 'ALL' ? '' : ' de ' + escapeHtml(selectedBrand)} (suma)</option>` +
-      visibleProducts.map(p => `<option value="${escapeHtml(p.code)}">${escapeHtml(p.label)}</option>`).join('');
-    productSelect.value = selectedProduct;
+    codeFilter.disabled = false;
+    codeList.innerHTML = brandProducts().map(p => `<option value="${escapeHtml(p.code)}">${escapeHtml(p.desc || '')}</option>`).join('');
+    fillProductSelect();
     exportBtn.disabled = false;
     renderSelection();
     renderTable();
   }
+
+  // Llena "Ver" con los productos de la marca elegida que coinciden con el filtro de Código.
+  // Si el texto coincide exactamente con un código (o deja un solo producto), se selecciona ese producto.
+  function fillProductSelect(){
+    const vis = visibleProducts();
+    const q = codeQuery.toLowerCase();
+    if (q){
+      const exact = vis.find(p => String(p.code).toLowerCase() === q);
+      if (exact) selectedProduct = exact.code;
+      else if (vis.length === 1) selectedProduct = vis[0].code;
+    }
+    if (selectedProduct !== 'ALL' && !vis.some(p => p.code === selectedProduct)) selectedProduct = 'ALL';
+    codeFilter.classList.toggle('no-match', !!q && vis.length === 0);
+    const allTxt = codeQuery ? 'Todos los que coinciden (' + vis.length + ')' :
+      'Todos los productos' + (selectedBrand === 'ALL' ? '' : ' de ' + escapeHtml(selectedBrand));
+    productSelect.disabled = vis.length === 0 && !q;
+    productSelect.innerHTML = `<option value="ALL">${allTxt} (suma)</option>` +
+      vis.map(p => `<option value="${escapeHtml(p.code)}">${escapeHtml(p.label)}</option>`).join('');
+    productSelect.value = selectedProduct;
+  }
+
+  codeFilter.addEventListener('input', () => {
+    if (!hasData) return;
+    const prev = codeQuery;
+    codeQuery = codeFilter.value.trim();
+    if (!codeQuery && prev) selectedProduct = 'ALL';   // al borrar el filtro, se vuelve a la vista agregada
+    fillProductSelect();
+    renderSelection();
+  });
 
   productSelect.addEventListener('change', () => {
     if (!hasData) return;
@@ -1384,7 +1449,7 @@
     const byCode = {};
     allRows.forEach(r => { if (r.nuevo !== null) (byCode[r.code] = byCode[r.code] || {})[r.periodKey] = r.nuevo; });
     const rows = productList.filter(p => byCode[p.code]).map(p => ({
-      code: p.code, desc: p.desc, label: p.label,
+      code: p.code, desc: p.desc, label: p.label, marca: p.marca || '',
       uncertain: !!(uncertainByCode[p.code] && uncertainByCode[p.code].flag),
       uncertainReason: (uncertainByCode[p.code] && uncertainByCode[p.code].reason) || '',
       values: cols.map(c => byCode[p.code][c.periodKey] ?? null)
@@ -1398,7 +1463,7 @@
     if (wide.rows.length === 0 || wide.cols.length === 0){
       tableWrap.classList.add('is-hidden');
       tableEmpty.classList.remove('is-hidden');
-      tableEmpty.textContent = 'No hay meses futuros con pronóstico para mostrar.';
+      tableEmpty.textContent = 'No hay meses (desde el actual) con pronóstico para mostrar.';
       return;
     }
     tableEmpty.classList.add('is-hidden');
@@ -1441,21 +1506,21 @@
     const wide = buildWide();
 
     // Pestaña 1: "Nuevo Pronóstico por Mes" — incluye las columnas de revisión manual y motivo.
-    const aoaNuevo = [['Código', 'Producto', 'Revisar manualmente', 'Motivo', ...wide.cols.map(c => c.label)]];
-    wide.rows.forEach(r => aoaNuevo.push([r.code, r.desc || '', r.uncertain ? 'Sí' : 'No', r.uncertainReason || '', ...r.values.map(v => v === null ? '' : roundInt(v))]));
-    aoaNuevo.push(['Total', 'Todos los productos', '', '', ...wide.totals.map(v => roundInt(v))]);
+    const aoaNuevo = [['Código', 'Producto', 'Marca', 'Revisar manualmente', 'Motivo', ...wide.cols.map(c => c.label)]];
+    wide.rows.forEach(r => aoaNuevo.push([r.code, r.desc || '', r.marca, r.uncertain ? 'Sí' : 'No', r.uncertainReason || '', ...r.values.map(v => v === null ? '' : roundInt(v))]));
+    aoaNuevo.push(['Total', 'Todos los productos', '', '', '', ...wide.totals.map(v => roundInt(v))]);
 
     // Pestaña 2: "ENTREGABLE" — el mismo Nuevo Pronóstico por Mes, sin las columnas de revisión
     // manual ni motivo (listo para entregar tal cual).
-    const aoaEntregable = [['Código', 'Producto', ...wide.cols.map(c => c.label)]];
-    wide.rows.forEach(r => aoaEntregable.push([r.code, r.desc || '', ...r.values.map(v => v === null ? '' : roundInt(v))]));
-    aoaEntregable.push(['Total', 'Todos los productos', ...wide.totals.map(v => roundInt(v))]);
+    const aoaEntregable = [['Código', 'Producto', 'Marca', ...wide.cols.map(c => c.label)]];
+    wide.rows.forEach(r => aoaEntregable.push([r.code, r.desc || '', r.marca, ...r.values.map(v => v === null ? '' : roundInt(v))]));
+    aoaEntregable.push(['Total', 'Todos los productos', '', ...wide.totals.map(v => roundInt(v))]);
 
     const wb = XLSX.utils.book_new();
     const wsNuevo = XLSX.utils.aoa_to_sheet(aoaNuevo);
-    wsNuevo['!cols'] = [{wch:14}, {wch:44}, {wch:16}, {wch:44}, ...wide.cols.map(() => ({wch:11}))];
+    wsNuevo['!cols'] = [{wch:14}, {wch:44}, {wch:18}, {wch:16}, {wch:44}, ...wide.cols.map(() => ({wch:11}))];
     const wsEntregable = XLSX.utils.aoa_to_sheet(aoaEntregable);
-    wsEntregable['!cols'] = [{wch:14}, {wch:44}, ...wide.cols.map(() => ({wch:11}))];
+    wsEntregable['!cols'] = [{wch:14}, {wch:44}, {wch:18}, ...wide.cols.map(() => ({wch:11}))];
     const wsMetricas = XLSX.utils.json_to_sheet(metricsRows);
     XLSX.utils.book_append_sheet(wb, wsNuevo, 'Nuevo Pronóstico por Mes');
     XLSX.utils.book_append_sheet(wb, wsEntregable, 'ENTREGABLE');
