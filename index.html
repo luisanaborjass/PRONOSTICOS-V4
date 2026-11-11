@@ -148,14 +148,14 @@
       <span class="brand-signature">By LB</span>
     </div>
 
-    <div class="slot" id="slot-pronosticos" data-slot="pronosticos">
+    <div class="slot" id="slot-actual" data-slot="actual">
       <span class="tag req">Obligatorio</span>
-      <p class="slot-label">Carga el archivo de pronósticos aquí</p>
-      <input id="input-pronosticos" class="sr-only slot-input" type="file" accept=".xlsx,.xls" data-slot="pronosticos">
-      <label class="dropzone" for="input-pronosticos">
+      <p class="slot-label">Carga el pronóstico actual aquí</p>
+      <input id="input-actual" class="sr-only slot-input" type="file" accept=".xlsx,.xls,.csv" data-slot="actual">
+      <label class="dropzone" for="input-actual">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
         <span class="dz-main">Arrastra el archivo o <u>elígelo</u></span>
-        <span class="dz-sub">1ª pestaña: actual · 2ª pestaña: sugerido</span>
+        <span class="dz-sub">Si trae 2 pestañas, la 2ª se usa como sugerido</span>
       </label>
       <div class="slot-status" aria-live="polite"></div>
     </div>
@@ -172,15 +172,27 @@
       <div class="slot-status" aria-live="polite"></div>
     </div>
 
+    <div class="slot" id="slot-sugerido" data-slot="sugerido">
+      <span class="tag">Opcional</span>
+      <p class="slot-label">Carga el sugerido aquí (si viene aparte)</p>
+      <input id="input-sugerido" class="sr-only slot-input" type="file" accept=".xlsx,.xls,.csv" data-slot="sugerido">
+      <label class="dropzone" for="input-sugerido">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        <span class="dz-main">Arrastra el archivo o <u>elígelo</u></span>
+        <span class="dz-sub">.xlsx · .xls · .csv</span>
+      </label>
+      <div class="slot-status" aria-live="polite"></div>
+    </div>
+
     <div class="side-note">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E7490" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <span>El análisis se genera cuando cargas el archivo de pronósticos y la venta histórica. El pronóstico sugerido se toma de la segunda pestaña del archivo de pronósticos.</span>
+      <span>El análisis se genera cuando cargas el pronóstico actual y la venta histórica. El sugerido puede venir en la 2ª pestaña del archivo del pronóstico actual o en un archivo aparte; si cargas ambos, manda el archivo aparte.</span>
     </div>
 
     <details class="help">
       <summary>¿Qué formato debe tener cada archivo?</summary>
       <ul>
-        <li><b>Pronósticos:</b> un solo Excel. La <b>primera pestaña</b> es el pronóstico actual y la <b>segunda pestaña</b> el pronóstico sugerido. En ambas, un renglón por producto (columna <span class="mono">Item code</span>) y un mes por columna, por ejemplo <span class="mono">Sep 2026</span>.</li>
+        <li><b>Pronósticos:</b> pueden venir en un solo Excel (<b>1ª pestaña</b> = actual, <b>2ª pestaña</b> = sugerido) o en dos archivos separados. En todos los casos, un renglón por producto (columna <span class="mono">Item code</span>) y un mes por columna, por ejemplo <span class="mono">Sep 2026</span>.</li>
         <li><b>Venta histórica:</b> un renglón por producto y mes, con las columnas <span class="mono">Articulo</span>, el mes (por ejemplo <span class="mono">10-2025</span>) y <span class="mono">Venta Neta</span>.</li>
       </ul>
     </details>
@@ -319,6 +331,8 @@
 
   // ================= State =================
   const raw = { historico: null, actual: null, sugerido: null };
+  // El sugerido puede llegar de dos lados: su propio archivo o la 2ª pestaña del archivo del actual.
+  const sugSources = { archivo: null, pestana: null, pestanaInfo: '' };
   let hasData = false, hasSuggested = false;
   let allRows = [], productList = [], periodList = [];
   let uncertainByCode = {};
@@ -488,6 +502,35 @@
     slot.classList.toggle('filled', !!ok);
   }
 
+  const OK_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M20 6L9 17l-5-5"/></svg>';
+  const slotSugerido = () => document.getElementById('slot-sugerido');
+
+  function summaryMeta(parsed){
+    const nProd = new Set(parsed.rows.map(r => r.code)).size;
+    const nMonths = new Set(parsed.rows.map(r => r.periodKey)).size;
+    return nProd + (nProd === 1 ? ' producto' : ' productos') + ' · ' + nMonths + ' meses' +
+      (parsed.skippedZeroMonths ? ' · ' + parsed.skippedZeroMonths + (parsed.skippedZeroMonths === 1 ? ' mes omitido (todo en cero)' : ' meses omitidos (todo en cero)') : '');
+  }
+  function okStatus(fileName, meta, extra){
+    return '<div class="ok">' + OK_ICON +
+      '<span class="fname" title="' + escapeHtml(fileName) + '">' + escapeHtml(fileName) + '</span>' +
+      '<button type="button" class="slot-clear">Quitar</button></div>' +
+      '<div class="meta">' + meta + '</div>' + (extra || '');
+  }
+
+  // Decide qué sugerido usar: el archivo aparte manda; si no hay, el de la 2ª pestaña del actual.
+  function syncSugerido(){
+    raw.sugerido = sugSources.archivo || sugSources.pestana || null;
+    const slot = slotSugerido();
+    if (!sugSources.archivo){
+      if (sugSources.pestana){
+        setSlotStatus(slot, '<div class="meta" style="margin-left:0">' + OK_ICON + ' Se usa la 2ª pestaña del pronóstico actual ' + sugSources.pestanaInfo + '. Si cargas un archivo aquí, reemplaza a esa pestaña.</div>', false);
+      } else if (!slot.querySelector('.bad')){
+        setSlotStatus(slot, '', false);
+      }
+    }
+  }
+
   function loadSlot(key, file, slot){
     clearError();
     setSlotStatus(slot, '<span class="spinner"></span> Leyendo archivo…', false);
@@ -498,43 +541,31 @@
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, {type:'array', cellDates:true});
         const gridOf = i => XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[i]], {header:1, defval:null, raw:true});
-        let parsed, extraMeta = '';
-        if (key === 'pronosticos'){
-          // Un solo archivo: 1ª pestaña = pronóstico actual, 2ª pestaña = pronóstico sugerido (opcional).
-          parsed = parseForecastWide(gridOf(0));
-          raw.sugerido = null;
-          if (!parsed.error){
-            if (wb.SheetNames.length < 2){
-              extraMeta = '<div class="meta">Sin segunda pestaña: se analiza sin pronóstico sugerido.</div>';
+        const parsed = key === 'historico' ? parseHistorico(gridOf(0)) : parseForecastWide(gridOf(0));
+        if (parsed.error){
+          clearRaw(key);
+          setSlotStatus(slot, '<span class="bad">' + escapeHtml(parsed.error) + '</span>', false);
+        } else if (key === 'actual'){
+          raw.actual = parsed;
+          sugSources.pestana = null; sugSources.pestanaInfo = '';
+          let extra = '';
+          if (wb.SheetNames.length >= 2){
+            const sug = parseForecastWide(gridOf(1));
+            if (sug.error){
+              extra = '<div class="meta"><span class="bad">2ª pestaña «' + escapeHtml(wb.SheetNames[1]) + '» no se pudo usar como sugerido: ' + escapeHtml(sug.error) + '</span></div>';
             } else {
-              const sug = parseForecastWide(gridOf(1));
-              if (sug.error){
-                extraMeta = '<div class="meta"><span class="bad">Pestaña «' + escapeHtml(wb.SheetNames[1]) + '» (sugerido): ' + escapeHtml(sug.error) + '</span></div>';
-              } else {
-                raw.sugerido = sug;
-                const nS = new Set(sug.rows.map(r => r.code)).size;
-                extraMeta = '<div class="meta">Actual: «' + escapeHtml(wb.SheetNames[0]) + '» · Sugerido: «' + escapeHtml(wb.SheetNames[1]) + '» (' + nS + (nS === 1 ? ' producto' : ' productos') + ')</div>';
-              }
+              sugSources.pestana = sug;
+              sugSources.pestanaInfo = '«' + escapeHtml(wb.SheetNames[1]) + '» (' + summaryMeta(sug) + ')';
+              extra = '<div class="meta">Actual: «' + escapeHtml(wb.SheetNames[0]) + '» · Sugerido: «' + escapeHtml(wb.SheetNames[1]) + '»' + '</div>';
             }
           }
+          setSlotStatus(slot, okStatus(file.name, summaryMeta(parsed), extra), true);
+        } else if (key === 'sugerido'){
+          sugSources.archivo = parsed;
+          setSlotStatus(slot, okStatus(file.name, summaryMeta(parsed)), true);
         } else {
-          parsed = parseHistorico(gridOf(0));
-        }
-        const target = key === 'pronosticos' ? 'actual' : key;
-        if (parsed.error){
-          raw[target] = null;
-          if (key === 'pronosticos') raw.sugerido = null;
-          setSlotStatus(slot, '<span class="bad">' + escapeHtml(parsed.error) + '</span>', false);
-        } else {
-          raw[target] = parsed;
-          const nProd = new Set(parsed.rows.map(r => r.code)).size;
-          const nMonths = new Set(parsed.rows.map(r => r.periodKey)).size;
-          setSlotStatus(slot,
-            '<div class="ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M20 6L9 17l-5-5"/></svg>' +
-            '<span class="fname" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</span>' +
-            '<button type="button" class="slot-clear">Quitar</button></div>' +
-            '<div class="meta">' + nProd + (nProd === 1 ? ' producto' : ' productos') + ' · ' + nMonths + ' meses' +
-            (parsed.skippedZeroMonths ? ' · ' + parsed.skippedZeroMonths + (parsed.skippedZeroMonths === 1 ? ' mes omitido (todo en cero)' : ' meses omitidos (todo en cero)') : '') + '</div>' + extraMeta, true);
+          raw[key] = parsed;
+          setSlotStatus(slot, okStatus(file.name, summaryMeta(parsed)), true);
         }
       } catch(err){
         console.error(err);
@@ -544,25 +575,29 @@
           : 'No se pudo leer este archivo.';
         setSlotStatus(slot, '<span class="bad">' + msg + '</span>', false);
       }
+      syncSugerido();
       refresh();
     };
     reader.onerror = function(){
       clearRaw(key);
       setSlotStatus(slot, '<span class="bad">Error al leer el archivo.</span>', false);
+      syncSugerido();
       refresh();
     };
     reader.readAsArrayBuffer(file);
   }
 
-  // El slot de pronósticos alimenta dos datos: el actual (1ª pestaña) y el sugerido (2ª pestaña).
+  // Quitar el actual también quita el sugerido que venía en su 2ª pestaña.
   function clearRaw(key){
-    if (key === 'pronosticos'){ raw.actual = null; raw.sugerido = null; }
+    if (key === 'actual'){ raw.actual = null; sugSources.pestana = null; sugSources.pestanaInfo = ''; }
+    else if (key === 'sugerido'){ sugSources.archivo = null; }
     else raw[key] = null;
   }
   function clearSlot(key, slot){
     clearRaw(key);
     slot.querySelector('.slot-input').value = '';
     setSlotStatus(slot, '', false);
+    syncSugerido();
     refresh();
   }
 
